@@ -8,8 +8,8 @@ import (
 	"github.com/fatih/color"
 )
 
-const VERSION = "v0.10.0"
-const VER_DESC = "Multi-Platform Compilation Support"
+const VERSION = "v0.10.1"
+const VER_DESC = "restrict build/install to host OS during install"
 
 func main() {
 	if len(os.Args) < 2 {
