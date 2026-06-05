@@ -6,7 +6,7 @@ build:
   optimisation: true
 
   env:
-    GOOS: windows
+    GOOS: [windows, mac, linux]
     GOARCH: amd64
 
   flags:

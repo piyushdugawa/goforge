@@ -46,9 +46,100 @@ type Config struct {
 		Output       string `yaml: "output"`
 		Optimisation bool   `yaml: "optimisation"`
 
-		Env   map[string]string `yaml: "env"`
-		Flags []string          `yaml: "flags"`
+		Env   map[string]interface{} `yaml: "env"`
+		Flags []string               `yaml: "flags"`
 	} `yaml: "build"`
+}
+
+func GetGOOSList(env map[string]interface{}) []string {
+	if env == nil {
+		return []string{}
+	}
+	val, ok := env["GOOS"]
+	if !ok {
+		return []string{}
+	}
+	switch v := val.(type) {
+	case string:
+		var list []string
+		for _, s := range strings.Split(v, ",") {
+			s = strings.TrimSpace(s)
+			if s != "" {
+				list = append(list, s)
+			}
+		}
+		return list
+	case []interface{}:
+		var list []string
+		for _, item := range v {
+			s := strings.TrimSpace(fmt.Sprintf("%v", item))
+			if s != "" {
+				list = append(list, s)
+			}
+		}
+		return list
+	default:
+		s := strings.TrimSpace(fmt.Sprintf("%v", val))
+		if s != "" {
+			return []string{s}
+		}
+		return []string{}
+	}
+}
+
+func compileTarget(cfg *Config, platform string, outputPath string) error {
+	targetOS := platform
+	if targetOS == "mac" {
+		targetOS = "darwin"
+	}
+
+	originalEnv := make(map[string]string)
+	for key, val := range cfg.Build.Env {
+		if key == "GOOS" {
+			continue
+		}
+		originalEnv[key] = os.Getenv(key)
+		os.Setenv(key, fmt.Sprintf("%v", val))
+	}
+	if platform != "" {
+		originalEnv["GOOS"] = os.Getenv("GOOS")
+		os.Setenv("GOOS", targetOS)
+	}
+
+	defer func() {
+		for key, val := range originalEnv {
+			if val == "" {
+				os.Unsetenv(key)
+			} else {
+				os.Setenv(key, val)
+			}
+		}
+	}()
+
+	absOutput, err := filepath.Abs(outputPath)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(absOutput), 0755)
+	if err != nil {
+		return err
+	}
+
+	Chvenv("src")
+	defer Chvenv("../")
+
+	var args []string
+	if cfg.Build.Optimisation {
+		args = append(cfg.Build.Flags, "-o", absOutput, "main.go")
+	} else {
+		args = []string{"-o", absOutput, "main.go"}
+	}
+
+	color.Blue("🔨 Running build for platform %s:", platform)
+	color.Cyan("go build %v\n", args)
+
+	return Cmd("go", append([]string{"build"}, args...)...)
 }
 
 func New() {
@@ -89,51 +180,49 @@ func Build() {
 		return
 	}
 
-	switch cfg.Build.Optimisation {
-	case true:
-		for key, val := range cfg.Build.Env {
-			os.Setenv(key, val)
-		}
-
-		Chvenv("src")
-		err = Cmd("go", "mod", "tidy")
-		if err != nil {
-			color.Red("❌ Error building app, pls check your modules: %v\n", err)
-			return
-		}
-		// making cmd
-		args := append(cfg.Build.Flags, "-o", "../"+cfg.Build.Output, "main.go")
-
-		err = Cmd("go", append([]string{"build"}, args...)...)
-
-		color.Blue("🔨 Running build:")
-		color.Cyan("go %v\n", args)
-
-		if err != nil {
-			color.Red("❌ Build Failed: %v\n", err)
-			return
-		}
-		color.Green("✅ Build Successful!\n")
-	case false:
-		Chvenv("src")
-		err = Cmd("go", "mod", "tidy")
-		if err != nil {
-			color.Red("❌ Error building app, pls check your modules: %v\n", err)
-			return
-		}
-		err = Cmd("go", "build", "-o", cfg.Build.Output)
-
-		color.Blue("🔨 Running build:")
-		color.Cyan("go build -o %v\n", cfg.Build.Output)
-
-		if err != nil {
-			color.Red("❌ Build Failed: %v\n", err)
-			return
-		}
-		color.Green("✅ Build Successful!\n")
-	}
+	Chvenv("src")
+	err = Cmd("go", "mod", "tidy")
 	Chvenv("../")
+	if err != nil {
+		color.Red("❌ Error tidying modules: %v\n", err)
+		return
+	}
 
+	goosList := GetGOOSList(cfg.Build.Env)
+	if len(goosList) == 0 {
+		err = compileTarget(cfg, "", cfg.Build.Output)
+		if err != nil {
+			color.Red("❌ Build Failed: %v\n", err)
+			return
+		}
+		color.Green("✅ Build Successful!\n")
+		return
+	}
+
+	dir := filepath.Dir(cfg.Build.Output)
+	base := filepath.Base(cfg.Build.Output)
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+
+	for i, platform := range goosList {
+		var outputPath string
+		if i == 0 {
+			outputPath = cfg.Build.Output
+		} else {
+			targetExt := ""
+			if platform == "windows" {
+				targetExt = ".exe"
+			}
+			outputPath = filepath.Join(dir, platform, name+targetExt)
+		}
+
+		err = compileTarget(cfg, platform, outputPath)
+		if err != nil {
+			color.Red("❌ Build Failed for platform %s: %v\n", platform, err)
+			return
+		}
+	}
+	color.Green("✅ All Builds Successful!\n")
 }
 
 func Run() {
@@ -253,10 +342,14 @@ func Clean() {
 		color.Red("❌ Failed to load config: %v\n", err)
 		return
 	}
-	src := cfg.Build.Output
-	err = os.Remove(src)
+	dir := filepath.Dir(cfg.Build.Output)
+	if dir != "" && dir != "." && dir != "/" && dir != "\\" {
+		err = os.RemoveAll(dir)
+	} else {
+		err = os.Remove(cfg.Build.Output)
+	}
 	if err != nil {
-		fmt.Println("Error removing program:", err)
+		fmt.Println("Error cleaning program:", err)
 		return
 	}
 
