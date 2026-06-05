@@ -8,8 +8,8 @@ import (
 	"github.com/fatih/color"
 )
 
-const VERSION = "V0.9.1"
-const VER_DESC = "Build Path Rectified"
+const VERSION = "v0.10.0"
+const VER_DESC = "Multi-Platform Compilation Support"
 
 func main() {
 	if len(os.Args) < 2 {
