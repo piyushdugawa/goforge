@@ -39,17 +39,17 @@ var cfgcontent = `  optimisation: true
 
 type Config struct {
 	App struct {
-		Package string `yaml: "package"`
-		Version string `yaml: "version"`
-	} `yaml: "app"`
+		Package string `yaml:"package"`
+		Version string `yaml:"version"`
+	} `yaml:"app"`
 
 	Build struct {
-		Output       string `yaml: "output"`
-		Optimisation bool   `yaml: "optimisation"`
+		Output       string `yaml:"output"`
+		Optimisation bool   `yaml:"optimisation"`
 
-		Env   map[string]interface{} `yaml: "env"`
-		Flags []string               `yaml: "flags"`
-	} `yaml: "build"`
+		Env   map[string]interface{} `yaml:"env"`
+		Flags []string               `yaml:"flags"`
+	} `yaml:"build"`
 }
 
 func GetGOOSList(env map[string]interface{}) []string {
@@ -424,7 +424,7 @@ func Gobin() string {
 }
 
 func Help() {
-	fmt.Println(`Goforge - A minimal forge to build and manage your Go-based projects
+	fmt.Printf(`Goforge - A minimal forge to build and manage your Go-based projects
 
 Usage:
   goforge [command] [arguments]
