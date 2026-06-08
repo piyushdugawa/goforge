@@ -153,8 +153,26 @@ func compileTarget(cfg *Config, platform string, outputPath string) error {
 	return Cmd("go", append([]string{"build"}, args...)...)
 }
 
-func New() {
-	CreateCfgFile(CONFIG_FILE, cfgcontent)
+func New(pkgName string) {
+	var err error
+	if pkgName == "" {
+		pkgName, err = PromptPackageName()
+		if err != nil {
+			color.Red("❌ %v\n", err)
+			return
+		}
+	}
+
+	buildstr := filepath.Base(pkgName)
+	preview := fmt.Sprintf("app:\n  package: %s\n  version: 0.0.1\nbuild:\n  output: build/%s.exe\n%s", pkgName, buildstr, cfgcontent)
+
+	confirmed := AskConfirm("Are you sure you want to initialise this module?", preview)
+	if !confirmed {
+		color.Red("❌ Initialization cancelled.\n")
+		return
+	}
+
+	CreateCfgFile(CONFIG_FILE, pkgName, cfgcontent)
 
 	dirname := "./src"
 
@@ -289,7 +307,6 @@ func Run() {
 	}
 	if !FileExists(cfg.Build.Output) {
 		Build()
-		Chvenv("../")
 		Run()
 		return
 	}

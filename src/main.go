@@ -18,11 +18,11 @@ func main() {
 	}
 	switch os.Args[1] {
 	case "new":
-		if len(os.Args) < 3 {
-			color.Yellow("⚠️  Usage: goforge <command> [arguments]\n")
-			return
+		pkgName := ""
+		if len(os.Args) >= 3 {
+			pkgName = os.Args[2]
 		}
-		utils.New()
+		utils.New(pkgName)
 	case "run":
 		utils.Run()
 	case "build":
