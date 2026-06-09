@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/fatih/color"
 )
 
@@ -153,6 +154,76 @@ func compileTarget(cfg *Config, platform string, outputPath string) error {
 	return Cmd("go", append([]string{"build"}, args...)...)
 }
 
+func GetTargetOutputPath(output string, platform string, isPrimary bool) string {
+	if isPrimary {
+		if platform == "windows" && !strings.HasSuffix(strings.ToLower(output), ".exe") {
+			return output + ".exe"
+		}
+		return output
+	}
+
+	dir := filepath.Dir(output)
+	base := filepath.Base(output)
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+
+	targetExt := ""
+	if platform == "windows" {
+		targetExt = ".exe"
+	}
+	return filepath.Join(dir, platform, name+targetExt)
+}
+
+func GetHostBinaryPath(cfg *Config) string {
+	goosList := GetGOOSList(cfg.Build.Env)
+	if len(goosList) == 0 {
+		return GetTargetOutputPath(cfg.Build.Output, runtime.GOOS, true)
+	}
+
+	platform, index := findHostPlatformInList(goosList)
+	if index == 0 {
+		return GetTargetOutputPath(cfg.Build.Output, platform, true)
+	} else if index > 0 {
+		return GetTargetOutputPath(cfg.Build.Output, platform, false)
+	} else {
+		// Fallback: assume the primary target or host OS
+		return GetTargetOutputPath(cfg.Build.Output, runtime.GOOS, true)
+	}
+}
+
+func GenerateCfgContent(optimisation bool, selectedOSes []string) string {
+	goosStr := fmt.Sprintf("[%s]", strings.Join(selectedOSes, ", "))
+
+	return fmt.Sprintf(`  optimisation: %v
+  
+  env:
+    GOOS: %s
+    GOARCH: amd64
+
+  flags:
+    - -ldflags
+    - "-s -w"`, optimisation, goosStr)
+}
+
+func PrioritizeHostOS(selectedOSes []string) []string {
+	hostOS := runtime.GOOS
+	var hostIdx = -1
+	for i, osVal := range selectedOSes {
+		if osVal == hostOS || (osVal == "mac" && hostOS == "darwin") {
+			hostIdx = i
+			break
+		}
+	}
+
+	if hostIdx > 0 {
+		hostVal := selectedOSes[hostIdx]
+		selectedOSes = append(selectedOSes[:hostIdx], selectedOSes[hostIdx+1:]...)
+		selectedOSes = append([]string{hostVal}, selectedOSes...)
+	}
+
+	return selectedOSes
+}
+
 func New(pkgName string) {
 	var err error
 	if pkgName == "" {
@@ -163,8 +234,29 @@ func New(pkgName string) {
 		}
 	}
 
+	selectedOSes, err := PromptTargetOSes()
+	if err != nil {
+		color.Red("❌ Initialization cancelled.\n")
+		return
+	}
+
+	selectedOSes = PrioritizeHostOS(selectedOSes)
+
+	var optimisation bool
+	err = huh.NewConfirm().
+		Title("Enable build optimization?").
+		Affirmative("Yes").
+		Negative("No").
+		Value(&optimisation).
+		Run()
+	if err != nil {
+		color.Red("❌ Initialization cancelled.\n")
+		return
+	}
+
+	customCfgContent := GenerateCfgContent(optimisation, selectedOSes)
 	buildstr := filepath.Base(pkgName)
-	preview := fmt.Sprintf("app:\n  package: %s\n  version: 0.0.1\nbuild:\n  output: build/%s.exe\n%s", pkgName, buildstr, cfgcontent)
+	preview := fmt.Sprintf("app:\n  package: %s\n  version: 0.0.1\nbuild:\n  output: build/%s\n%s", pkgName, buildstr, customCfgContent)
 
 	confirmed := AskConfirm("Are you sure you want to initialise this module?", preview)
 	if !confirmed {
@@ -172,7 +264,7 @@ func New(pkgName string) {
 		return
 	}
 
-	CreateCfgFile(CONFIG_FILE, pkgName, cfgcontent)
+	CreateCfgFile(CONFIG_FILE, pkgName, customCfgContent)
 
 	dirname := "./src"
 
@@ -228,29 +320,17 @@ func Build() {
 		var platformToCompile string = hostOS
 
 		if len(goosList) == 0 {
-			outputPath = cfg.Build.Output
+			outputPath = GetTargetOutputPath(cfg.Build.Output, hostOS, true)
 		} else {
-			dir := filepath.Dir(cfg.Build.Output)
-			base := filepath.Base(cfg.Build.Output)
-			ext := filepath.Ext(base)
-			name := strings.TrimSuffix(base, ext)
-
 			platform, index := findHostPlatformInList(goosList)
 			if index == 0 {
-				outputPath = cfg.Build.Output
+				outputPath = GetTargetOutputPath(cfg.Build.Output, platform, true)
 				platformToCompile = platform
 			} else if index > 0 {
-				targetExt := ""
-				if platform == "windows" {
-					targetExt = ".exe"
-				}
-				outputPath = filepath.Join(dir, platform, name+targetExt)
+				outputPath = GetTargetOutputPath(cfg.Build.Output, platform, false)
 				platformToCompile = platform
 			} else {
-				outputPath = cfg.Build.Output
-				if hostOS == "windows" && !strings.HasSuffix(strings.ToLower(outputPath), ".exe") {
-					outputPath += ".exe"
-				}
+				outputPath = GetTargetOutputPath(cfg.Build.Output, hostOS, true)
 			}
 		}
 
@@ -264,7 +344,7 @@ func Build() {
 	}
 
 	if len(goosList) == 0 {
-		err = compileTarget(cfg, "", cfg.Build.Output)
+		err = compileTarget(cfg, "", GetTargetOutputPath(cfg.Build.Output, runtime.GOOS, true))
 		if err != nil {
 			color.Red("❌ Build Failed: %v\n", err)
 			return
@@ -273,21 +353,12 @@ func Build() {
 		return
 	}
 
-	dir := filepath.Dir(cfg.Build.Output)
-	base := filepath.Base(cfg.Build.Output)
-	ext := filepath.Ext(base)
-	name := strings.TrimSuffix(base, ext)
-
 	for i, platform := range goosList {
 		var outputPath string
 		if i == 0 {
-			outputPath = cfg.Build.Output
+			outputPath = GetTargetOutputPath(cfg.Build.Output, platform, true)
 		} else {
-			targetExt := ""
-			if platform == "windows" {
-				targetExt = ".exe"
-			}
-			outputPath = filepath.Join(dir, platform, name+targetExt)
+			outputPath = GetTargetOutputPath(cfg.Build.Output, platform, false)
 		}
 
 		err = compileTarget(cfg, platform, outputPath)
@@ -305,7 +376,8 @@ func Run() {
 		color.Red("❌ Failed to load config: %v\n", err)
 		return
 	}
-	if !FileExists(cfg.Build.Output) {
+	hostBin := GetHostBinaryPath(cfg)
+	if !FileExists(hostBin) {
 		Build()
 		Run()
 		return
@@ -315,7 +387,7 @@ func Run() {
 	color.Green("--------------------\n")
 	fmt.Println()
 
-	err = Cmd(cfg.Build.Output)
+	err = Cmd(hostBin)
 
 	if err != nil {
 		color.Red("Error running exe: %v\n", err)
@@ -332,32 +404,7 @@ func Install() {
 		return
 	}
 
-	goosList := GetGOOSList(cfg.Build.Env)
-	var src string
-	if len(goosList) == 0 {
-		src = cfg.Build.Output
-	} else {
-		dir := filepath.Dir(cfg.Build.Output)
-		base := filepath.Base(cfg.Build.Output)
-		ext := filepath.Ext(base)
-		name := strings.TrimSuffix(base, ext)
-
-		platform, index := findHostPlatformInList(goosList)
-		if index == 0 {
-			src = cfg.Build.Output
-		} else if index > 0 {
-			targetExt := ""
-			if platform == "windows" {
-				targetExt = ".exe"
-			}
-			src = filepath.Join(dir, platform, name+targetExt)
-		} else {
-			src = cfg.Build.Output
-			if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(src), ".exe") {
-				src += ".exe"
-			}
-		}
-	}
+	src := GetHostBinaryPath(cfg)
 
 	// Resolve absolute paths
 	absSrc, err := filepath.Abs(src)
@@ -391,32 +438,7 @@ func Remove() {
 		return
 	}
 
-	goosList := GetGOOSList(cfg.Build.Env)
-	var src string
-	if len(goosList) == 0 {
-		src = cfg.Build.Output
-	} else {
-		dir := filepath.Dir(cfg.Build.Output)
-		base := filepath.Base(cfg.Build.Output)
-		ext := filepath.Ext(base)
-		name := strings.TrimSuffix(base, ext)
-
-		platform, index := findHostPlatformInList(goosList)
-		if index == 0 {
-			src = cfg.Build.Output
-		} else if index > 0 {
-			targetExt := ""
-			if platform == "windows" {
-				targetExt = ".exe"
-			}
-			src = filepath.Join(dir, platform, name+targetExt)
-		} else {
-			src = cfg.Build.Output
-			if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(src), ".exe") {
-				src += ".exe"
-			}
-		}
-	}
+	src := GetHostBinaryPath(cfg)
 
 	binPath := Gobin()
 	destPath := filepath.Join(binPath, filepath.Base(src))
@@ -471,6 +493,10 @@ func Clean() {
 		err = os.RemoveAll(dir)
 	} else {
 		err = os.Remove(cfg.Build.Output)
+		if err != nil && !os.IsNotExist(err) {
+			// ignore
+		}
+		_ = os.Remove(cfg.Build.Output + ".exe")
 	}
 	if err != nil {
 		fmt.Println("Error cleaning program:", err)

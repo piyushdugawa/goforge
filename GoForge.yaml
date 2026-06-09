@@ -1,12 +1,12 @@
 app:
   package: GoForge
-  version: 0.11.0
+  version: 0.11.1
 build:
   output: build/goforge.exe
   optimisation: true
 
   env:
-    GOOS: [windows, mac, linux]
+    GOOS: [windows, linux]
     GOARCH: amd64
 
   flags:
