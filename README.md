@@ -21,7 +21,7 @@ GoForge uses `GoForge.yaml` to define how your project is built.
 ```yaml
 app:
   package: GoForge
-  version: 0.9.1
+  version: 0.11.1
 build:
   output: build/goforge.exe
   optimisation: true
