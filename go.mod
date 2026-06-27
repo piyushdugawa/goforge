@@ -1,4 +1,4 @@
-module github.com/piyushdugawa/goforge
+module github.com/piyushdugawa/girocco
 
 go 1.24.2
 

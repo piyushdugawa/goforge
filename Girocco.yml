@@ -1,0 +1,14 @@
+app:
+  package: github.com/piyushdugawa/girocco
+  version: 0.13.0
+build:
+  output: build/girocco.exe
+  optimisation: true
+
+  env:
+    GOOS: [windows, linux]
+    GOARCH: amd64
+
+  flags:
+    - -ldflags
+    - "-s -w"

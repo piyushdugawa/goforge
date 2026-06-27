@@ -8,11 +8,11 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "goforge",
-	Short: "Goforge is a minimal forge to build and manage your Go-based projects",
-	Long: `Goforge - A minimal forge to build and manage your Go-based projects
+	Use:   "girocco",
+	Short: "Girocco is a minimal system to build and manage your Go-based projects",
+	Long: `Girocco - A minimal system to build and manage your Go-based projects
 
-For more information, visit: https://github.com/piyushdugawa/goforge`,
+For more information, visit: https://github.com/piyushdugawa/girocco`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Show help when no subcommand is specified
 		cmd.Help()

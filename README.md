@@ -1,6 +1,24 @@
-# GoForge 🚀
+# Girocco 🚀
 
-**GoForge** is a lightweight and efficient build tool designed to simplify the development workflow for **Go (Golang)** projects. It automates repetitive tasks like project initialization, dependency management, optimization, and cross-compilation — so you can focus on writing code, not boilerplate.
+**Girocco** is a lightweight and efficient build tool designed to simplify the development workflow for **Go (Golang)** projects. It automates repetitive tasks like project initialization, dependency management, optimization, and cross-compilation — so you can focus on writing code, not boilerplate.
+
+---
+
+> [!NOTE]
+> **Project Rename**
+>
+> This project was previously known as **GoForge** and has been renamed to **Girocco** to establish a more unique identity and avoid naming conflicts as the project evolves.
+>
+> The rename only affects the project name, repository, module path, and CLI executable. The functionality, commands, and overall usage remain the same.
+>
+> If you were using **GoForge**, simply replace references to:
+>
+> * `GoForge` → `Girocco`
+> * `github.com/piyushdugawa/GoForge` → `github.com/piyushdugawa/girocco`
+> * `goforge` → `girocco`
+>
+> Thank you to everyone who has supported and contributed to the project. Your existing knowledge and workflows should transfer seamlessly to Girocco.
+
 
 ---
 
@@ -16,14 +34,14 @@
 
 ## 🛠️ Configuration
 
-GoForge uses `GoForge.yaml` to define how your project is built.
+Girocco uses `Girocco.yml` to define how your project is built.
 
 ```yaml
 app:
-  package: GoForge
-  version: 0.11.1
+  package: github.com/piyushdugawa/girocco
+  version: 0.14.0
 build:
-  output: build/goforge.exe
+  output: build/girocco.exe
   optimisation: true
 
   env:
@@ -37,26 +55,26 @@ build:
 
 ### 🌍 Multi-Platform Compilation Behavior
 When `GOOS` contains multiple operating systems:
-1. **Default/Primary OS**: The first OS in the list is treated as the default. Its binary is output directly to the path specified in `build.output` (e.g. `build/goforge.exe`).
-2. **Subsequent OS Targets**: The next operating systems are output to platform-specific subdirectories under the output directory (e.g., `build/mac/goforge`, `build/linux/goforge`).
+1. **Default/Primary OS**: The first OS in the list is treated as the default. Its binary is output directly to the path specified in `build.output` (e.g. `build/girocco.exe`).
+2. **Subsequent OS Targets**: The next operating systems are output to platform-specific subdirectories under the output directory (e.g., `build/mac/girocco`, `build/linux/girocco`).
 3. **Target Mapping**: Specifying `mac` automatically compiles using Go's `darwin` target but places the binary under the `mac/` directory.
 
 ---
 
 ## 🚀 Usage
 
-Use `goforge` in your terminal to manage Go project builds and automation:
+Use `girocco` in your terminal to manage Go project builds and automation:
 
 ```bash
-goforge <command> [args]
+girocco <command> [args]
 ```
 
 | Command                          | Description                                                                |
 | -------------------------------- | -------------------------------------------------------------------------- |
-| `goforge new <pkg-name>`         | Create a new Go project in the current directory and initialize `go.mod`.  |
-| `goforge build`                  | Build the Go project for all configured platforms.                        |
-| `goforge run`                    | Run the primary compiled binary (defined as the first OS target).          |
-| `goforge build run`              | Build and immediately run the primary binary.                              |
-| `goforge clean`                  | Safely removes all build binaries and platform subdirectories.             |
-| `goforge install`                | Install the binary to `$GOBIN`. *(Currently experimental)*                 |
-| `goforge remove`                 | Remove the installed binary from `$GOBIN`.                                 |
+| `girocco new <pkg-name>`         | Create a new Go project in the current directory and initialize `go.mod`.  |
+| `girocco build`                  | Build the Go project for all configured platforms.                        |
+| `girocco run`                    | Run the primary compiled binary (defined as the first OS target).          |
+| `girocco build run`              | Build and immediately run the primary binary.                              |
+| `girocco clean`                  | Safely removes all build binaries and platform subdirectories.             |
+| `girocco install`                | Install the binary to `$GOBIN`. *(Currently experimental)*                 |
+| `girocco remove`                 | Remove the installed binary from `$GOBIN`.                                 |
