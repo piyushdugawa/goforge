@@ -12,9 +12,9 @@ import (
 	"github.com/fatih/color"
 )
 
-var destFolder = Gobin() // <- change as you like
+var destFolder = Gobin()
 
-const CONFIG_FILE = "GoForge.yaml"
+const CONFIG_FILE = "girocco.yml"
 
 var srcfilename = "main.go"
 
@@ -23,7 +23,7 @@ var SrcContent = `package main
 import "fmt"
 
 func main(){
-	fmt.Println("Project Initialised by GoForge!")
+	fmt.Println("Project Initialised by Girocco!")
 }`
 
 var Pkg string
@@ -424,22 +424,22 @@ func Gobin() string {
 }
 
 func Help() {
-	fmt.Printf(`Goforge - A minimal forge to build and manage your Go-based projects
+	fmt.Printf(`Girocco - A minimal system to build and manage your Go-based projects
 
 Usage:
-  goforge [command] [arguments]
+  girocco [command] [arguments]
 
 Available Commands:
   help                 Show this help message
-  version              Show the current version of goforge
+  version              Show the current version of girocco
   run                  Run the current project (main package)
   build                Build the project and output the executable
-  new <pkg-name>       Initialize a new goforge project with the given package name
+  new <pkg-name>       Initialize a new girocco project with the given package name
   install              Install project as a program in GOBIN
   remove               Remove the installed program from GOBIN
   clean	               Removes all builds and temporary files
 
-For more information, visit: https://github.com/piyushdugawa/goforge/
+For more information, visit: https://github.com/piyushdugawa/girocco/
 `)
 }
 

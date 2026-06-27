@@ -17,7 +17,7 @@ type inputModel struct {
 
 func initialInputModel() inputModel {
 	ti := textinput.New()
-	ti.Placeholder = "package-name (e.g. goforge)"
+	ti.Placeholder = "package-name (e.g. girocco)"
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 30

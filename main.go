@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/piyushdugawa/goforge/cmd"
+	"github.com/piyushdugawa/girocco/cmd"
 )
 
-const VERSION = "v0.11.1"
-const VER_DESC = "restrict build/install to host OS during install"
+const VERSION = "v0.14.0"
+const VER_DESC = "Project name changed from GoForge to Girocco due to some conflicts."
 
 func main() {
 	cmd.Execute(VERSION)
