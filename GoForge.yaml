@@ -1,5 +1,5 @@
 app:
-  package: GoForge
+  package: github.com/piyushdugawa/goforge
   version: 0.11.1
 build:
   output: build/goforge.exe

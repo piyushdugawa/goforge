@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GoForge/cmd"
+	"github.com/piyushdugawa/goforge/cmd"
 )
 
 const VERSION = "v0.11.1"

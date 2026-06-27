@@ -1,4 +1,4 @@
-module GoForge
+module github.com/piyushdugawa/goforge
 
 go 1.24.2
 
