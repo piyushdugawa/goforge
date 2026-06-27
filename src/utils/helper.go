@@ -87,7 +87,7 @@ func CreateFile(srcfilename string, content string) {
 
 func CreateCfgFile(srcfilename string, pkgName string, srccontent string) {
 	buildstr := path.Base(pkgName)
-	content := "app:\n  package: " + pkgName + "\n" + "  version: 0.0.1" + "\n" + "build:\n  output: build/" + buildstr + ".exe\n"
+	content := "app:\n  package: " + pkgName + "\n" + "  version: 0.0.1" + "\n" + "build:\n  output: build/" + buildstr + "\n"
 	if _, err := os.Stat(srcfilename); os.IsNotExist(err) {
 		// File does not exist, so create it
 		file, err := os.Create(srcfilename)

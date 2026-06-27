@@ -1,10 +1,10 @@
 package main
 
 import (
-	"GoForge/cmd"
+	"github.com/piyushdugawa/goforge/cmd"
 )
 
-const VERSION = "v0.11.0"
+const VERSION = "v0.11.1"
 const VER_DESC = "restrict build/install to host OS during install"
 
 func main() {

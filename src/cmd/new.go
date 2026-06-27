@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"GoForge/utils"
+	"github.com/piyushdugawa/goforge/utils"
 
 	"github.com/spf13/cobra"
 )
