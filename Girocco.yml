@@ -2,11 +2,11 @@ app:
   package: github.com/piyushdugawa/girocco
   version: 0.13.0
 build:
-  output: build/girocco.exe
+  output: build/girocco
   optimisation: true
 
   env:
-    GOOS: [windows, linux]
+    GOOS: [linux, mac, windows]
     GOARCH: amd64
 
   flags:
